@@ -41,7 +41,7 @@ public class userController {
                     userOperation(eventList,user);
                     break;
                 case 3:
-                    buyEvent(eventList);
+                    buyEvent(eventList,user);
                     userOperation(eventList,user);
                     break;
                 case 4:
@@ -100,8 +100,27 @@ public class userController {
         System.out.println("投票成功");
 
     }
-    public static void buyEvent(List<Event> eventList){
-
+    public static void buyEvent(List<Event> eventList,User user){
+        Scanner in = new Scanner(System.in);
+        System.out.println("请输入要购买的热搜排名：");
+        int rank = in.nextInt();
+        // 接收 \n
+        String enter = in.nextLine();
+        System.out.println("请输入热搜名字：");
+        String name = in.nextLine();
+        System.out.println("请输入出价(现剩余钱数："+ user.getMoney() +")：");
+        int price = in.nextInt();
+        List<Event> targetEvent = eventList.stream().filter(event -> event.getRank() == rank).collect(Collectors.toList());
+        if (targetEvent.get(0).getPrice() < price){
+            targetEvent.get(0).setName(name);
+            targetEvent.get(0).setPrice(price);
+            targetEvent.get(0).setHeat(0);
+            user.setMoney(user.getMoney()-price);
+            System.out.println("购买成功");
+        }else {
+            System.out.println("您的出价不够哦");
+            userOperation(eventList,user);
+        }
     }
     public static void addEvent(List<Event> eventList){
         System.out.println("请输入热搜名字：");
@@ -109,13 +128,19 @@ public class userController {
         String name = in.nextLine();
         Event event = new Event(name);
         event.setRank(eventList.size()+1);
-        System.out.println(eventList.size());
-        System.out.println(event.getRank());
         eventList.add(event);
         System.out.println("添加成功");
     }
     public static List<Event> sortEvent(List<Event> eventList){
-        List<Event> sortedEventList = eventList.stream().sorted(Comparator.comparing(Event::getHeat).reversed()).collect(Collectors.toList());
+        //购买的热搜
+        List<Event> purchasedEvent = eventList.stream().filter(event -> event.getPrice() > 0).collect(Collectors.toList());
+        //未购买的热搜
+        List<Event> unPurchasedEvent = eventList.stream().filter(event -> event.getPrice() == 0).collect(Collectors.toList());
+        //对未被购买的按热度排序
+        List<Event> sortedEventList = unPurchasedEvent.stream().sorted(Comparator.comparing(Event::getHeat).reversed()).collect(Collectors.toList());
+        for(int i = 0; i < purchasedEvent.size(); i++){
+            sortedEventList.add(purchasedEvent.get(i).getRank()-1,purchasedEvent.get(i));
+        }
         sortedEventList.stream().forEach(event -> event.setRank(sortedEventList.indexOf(event)+1));
         return sortedEventList;
     }
